@@ -4,7 +4,7 @@
 Requires Python 3.8 or later
 
 
-PostgreSQL DB backend.
+MySQL DB backend.
 
 Each one of the CRUD operations should be able to open a database connection if
 there isn't already one available (check if there are any issues with this).
@@ -25,13 +25,9 @@ __history__ = """ """
 __version__ = "1.21.F21.1 ($Rev: 1 $)"
 
 import json
-import logging
-from datetime import datetime
-from pytz import timezone
 from apps.property.PropertyModel import PropertyModel
 from apps.status.StatusModel import StatusModel
-from sqlalchemy_filters import apply_filters
-from sqlalchemy import Column, Numeric, Integer, String, Date, Time, Sequence, Float
+from sqlalchemy import Column, Integer, Date, Sequence
 from db_controller.database_backend import *
 from db_controller import mvc_exceptions as mvc_exc
 
@@ -86,25 +82,26 @@ class StatusHistoryModel(Base):
         self.property_id = data_status.get('property_id')
         self.status_id = data_status.get('status_id')
         # para obtener la fecha de actualizacion que sera la de insercion de un nuevo registro
-        # self.update_date = get_current_date(session)  # SI VA pero en el metodo insert
+        # self.update_date = get_current_date(session)
 
     def check_if_row_exists(self, session, data):
 
         row_exists = None
-        inversion_id = 0
+        history_id = 0
 
         try:
             # for example to check if the insert on db is correct
-            jefe_id = self.get_status_id(session, data)
+            history_row = self.get_history_status_id(session, data)
 
-            if jefe_id is not None:
-                id_jefe = jefe_id.id_jefe
+            if history_row is not None:
+                history_id = history_row.id_history
             else:
-                id_jefe = 0
+                history_id = 0
 
-            logger.info('Jefe Sicario Row object in DB: %s', str(id_jefe))
+            logger.info('History Row object in DB: %s', str(history_row))
 
-            row_exists = session.query(JefeSicarioModel).filter(JefeSicarioModel.id_jefe == id_jefe).scalar()
+            row_exists = session.query(StatusHistoryModel).\
+                filter(StatusHistoryModel.id_history == history_id).scalar()
 
             logger.info('Row to data: {}, Exists: %s'.format(data), str(row_exists))
 
@@ -114,7 +111,7 @@ class StatusHistoryModel(Base):
             logger.exception('An exception was occurred while execute transactions: %s', str(str(exc.args) + ':' +
                                                                                              str(exc.code)))
             raise mvc_exc.IntegrityError(
-                'Row not stored in "{}". IntegrityError: {}'.format(data.get('cuenta'),
+                'Row not stored in "{}". IntegrityError: {}'.format(data.get('property_id'),
                                                                     str(str(exc.args) + ':' + str(exc.code)))
             )
         finally:
@@ -129,10 +126,14 @@ class StatusHistoryModel(Base):
         if not self.check_if_row_exists(session, data):
 
             try:
+                # para obtener la fecha de actualizacion que sera la de insercion de un nuevo registro
+                self.update_date = get_current_date(session)
 
-                new_row = JefeSicarioModel(data)
+                data['update_date'] = self.update_date
 
-                logger.info('New Row JefeSicario: %s', str(new_row.nombre_jefe))
+                new_row = StatusHistoryModel(data)
+
+                logger.info('New Row StatusHistory: %s', str(new_row.property_id))
 
                 session.add(new_row)
 
@@ -155,7 +156,7 @@ class StatusHistoryModel(Base):
                     endpoint_response = json.dumps({
                         "id_jefe": row_inserted.id_jefe,
                         "nombre_jefe": row_inserted.nombre_jefe,
-                        "like": grupo_sicario.nombre_grupo
+                        "post": grupo_sicario.nombre_grupo
                     })
 
             except SQLAlchemyError as exc:
@@ -172,117 +173,24 @@ class StatusHistoryModel(Base):
 
         return endpoint_response
 
-    def update_data(self, session, data):
-
-        endpoint_response = None
-
-        if self.check_if_row_exists(session, data):
-
-            try:
-
-                jefe_id = self.get_status_id(session, data).id_jefe
-
-                grupo_sicario = self.get_grupo_sicarios_id(session, data)
-
-                # update row to database
-                session.query(JefeSicarioModel).filter(JefeSicarioModel.id_jefe == jefe_id).\
-                    update({"nombre_jefe": data.get('nombre_jefe'),
-                            "id_grupo_sicario": data.get('like')},
-                           synchronize_session='fetch')
-
-                session.flush()
-
-                data['like'] = grupo_sicario.id_grupo
-                data['id_jefe'] = jefe_id
-
-                # check update correct
-                row_updated = self.get_one_jefe(self, session, data)
-
-                logger.info('Data Updated: %s', str(row_updated))
-
-                if row_updated:
-                    logger.info('Data JefeSicario updated')
-
-                    endpoint_response = json.dumps({
-                        "id_jefe": row_updated.id_jefe,
-                        "nombre_jefe": row_updated.nombre_jefe,
-                        "like": grupo_sicario.nombre_grupo
-                    })
-
-            except SQLAlchemyError as exc:
-                endpoint_response = None
-                session.rollback()
-                logger.exception('An exception was occurred while execute transactions: %s', str(str(exc.args) + ':' +
-                                                                                                 str(exc.code)))
-                raise mvc_exc.IntegrityError(
-                    'Row not stored in "{}". IntegrityError: {}'.format(data.get('nombre_jefe'),
-                                                                        str(str(exc.args) + ':' + str(exc.code)))
-                )
-            finally:
-                session.close()
-
-        return endpoint_response
-
-    def delete_data(self, session, data):
-
-        endpoint_response = None
-
-        try:
-
-            jefe_id = self.get_status_id(session, data).id_jefe
-
-            grupo_sicario = self.get_grupo_sicarios_id(session, data)
-
-            logger.info('JefeSicario Id: %s', str(jefe_id))
-
-            session.query(JefeSicarioModel).filter(JefeSicarioModel.id_jefe == jefe_id).delete()
-
-            session.flush()
-
-            data['id_jefe'] = jefe_id
-
-            # check update correct
-            row_deleted = self.get_one_jefe(self, session, data)
-
-            if not row_deleted or row_deleted is None:
-                logger.info('JefeSicario inactive')
-
-                endpoint_response = json.dumps({
-                    "id_jefe": jefe_id,
-                    "nombre_jefe": data.get('nombre_jefe'),
-                    "grupo_sicarios": grupo_sicario.nombre_grupo
-                })
-
-        except SQLAlchemyError as exc:
-            endpoint_response = None
-            session.rollback()
-            logger.exception('An exception was occurred while execute transactions: %s', str(str(exc.args) + ':' +
-                                                                                             str(exc.code)))
-            raise mvc_exc.IntegrityError(
-                'Row not stored in "{}". IntegrityError: {}'.format(data.get('cuenta'),
-                                                                    str(str(exc.args) + ':' + str(exc.code)))
-            )
-        finally:
-            session.close()
-
-        return endpoint_response
-
     @staticmethod
-    def get_status_id(session, data):
+    def get_history_status_id(session, data):
 
         row_status = None
 
         try:
 
-            row_exists = session.query(StatusModel).\
-                filter(StatusModel.name_status == data.get('name_status')).scalar()
+            row_exists = session.query(StatusHistoryModel).\
+                filter(StatusHistoryModel.property_id == data.get('property_id')).\
+                filter(StatusHistoryModel.status_id == data.get('status_id')).scalar()
 
             logger.info('Row Data Status Exists on DB: %s', str(row_exists))
 
             if row_exists:
 
                 row_status = session.query(StatusModel). \
-                    filter(StatusModel.name_status == data.get('name_status')).one()
+                    filter(StatusHistoryModel.property_id == data.get('property_id')). \
+                    filter(StatusHistoryModel.status_id == data.get('status_id')).one()
 
                 logger.info('Row ID Status data from database object: {}'.format(str(row_status)))
 
@@ -292,8 +200,8 @@ class StatusHistoryModel(Base):
                                                                                              str(exc.code)))
             raise mvc_exc.ItemNotStored(
                 'Can\'t read data: "{}" because it\'s not stored in "{}". Row empty: {}'.format(
-                    data.get('name_status'), StatusModel.__tablename__, str(str(exc.args) + ':' +
-                                                                            str(exc.code))
+                    data.get('property_id'), StatusHistoryModel.__tablename__, str(str(exc.args) + ':' +
+                                                                                   str(exc.code))
                 )
             )
 
@@ -303,78 +211,61 @@ class StatusHistoryModel(Base):
         return row_status
 
     @staticmethod
-    def get_grupo_sicarios_id(session, data):
+    def get_all_history(session):
 
-        row_grupo = None
+        all_status_history = None
+        status_history_data = []
 
-        try:
+        all_status_history = session.query(StatusHistoryModel).order_by(StatusHistoryModel.update_date.desc()).all()
 
-            row_exists = session.query(GrupoSicarioModel). \
-                filter(GrupoSicarioModel.id_grupo == data.get('like')).scalar()
+        for history in all_status_history:
 
-            logger.info('Row GrupoSicario Exists on DB: %s', str(row_exists))
+            history_id = history.id_history
+            property_id = history.property_id
+            status_id = history.status_id
 
-            if row_exists:
-                row_grupo = session.query(GrupoSicarioModel). \
-                    filter(GrupoSicarioModel.id_grupo == data.get('like')).one()
-
-                logger.info('Row ID GrupoSicario data from database object: {}'.format(str(row_grupo)))
-
-        except SQLAlchemyError as exc:
-
-            logger.exception('An exception was occurred while execute transactions: %s', str(str(exc.args) + ':' +
-                                                                                             str(exc.code)))
-            raise mvc_exc.ItemNotStored(
-                'Can\'t read data: "{}" because it\'s not stored in "{}". Row empty: {}'.format(
-                    data.get('like'), GrupoSicarioModel.__tablename__, str(str(exc.args) + ':' +
-                                                                                    str(exc.code))
-                )
-            )
-
-        finally:
-            session.close()
-
-        return row_grupo
-
-    @staticmethod
-    def get_all_jefes(session):
-
-        all_jefes = None
-        jefes_data = []
-
-        all_jefes = session.query(JefeSicarioModel).all()
-
-        for jefe in all_jefes:
-
-            jefe_id = jefe.id_jefe
-            nombre_jefe = jefe.nombre_jefe
-            id_grupo_sicario = jefe.id_grupo_sicario
-
-            jefes_data += [{
-                "Jefe": {
-                    "id_jefe": jefe_id,
-                    "cuenta": nombre_jefe,
-                    "like": id_grupo_sicario
+            status_history_data += [{
+                "Status": {
+                    "id_status": history_id,
+                    "property_id": property_id,
+                    "status_id": status_id
                 }
             }]
 
-        return json.dumps(jefes_data)
+        return json.dumps(status_history_data)
 
     @staticmethod
-    def get_one_jefe(self, session, data):
+    def get_last_status_history(session, data):
         row = None
+        status_history_data = []
 
         try:
-            id_jefe = self.get_status_id(session, data).id_jefe
 
-            row = session.query(JefeSicarioModel).filter(JefeSicarioModel.nombre_jefe == data.get('nombre_jefe')).\
-                filter(JefeSicarioModel.id_jefe == id_jefe).one()
+            row = StatusHistoryModel.query(StatusHistoryModel). \
+                filter(StatusHistoryModel.property_id == data.get('id_property')). \
+                filter(StatusHistoryModel.status_id == data.get('id_status')). \
+                order_by(StatusHistoryModel.update_date.desc()).all()
 
             if row:
-                logger.info('Data Inversion on Db: %s',
-                            'Cuenta: {}, Monto inversion: {}, Inversion Estatus: {}'.format(row.cuenta,
-                                                                                            row.monto,
-                                                                                            row.estatus))
+                logger.info('Data History Status Property on Db: %s',
+                            'Property: {}, Status: {}, LastDate: {}'.format(row.property_id,
+                                                                            row.status_id,
+                                                                            row.update_date))
+
+                for history in row:
+                    history_id = history.id_history
+                    property_id = history.property_id
+                    status_id = history.status_id
+
+                    status_history_data += [{
+                        "Status": {
+                            "id_status": history_id,
+                            "property_id": property_id,
+                            "status_id": status_id
+                        }
+                    }]
+
+                return json.dumps(status_history_data)
 
         except SQLAlchemyError as exc:
             row = None
@@ -383,15 +274,13 @@ class StatusHistoryModel(Base):
 
             raise mvc_exc.ItemNotStored(
                 'Can\'t read data: "{}" because it\'s not stored in "{}". Row empty: {}'.format(
-                    data.get('nombre_jefe'), JefeSicarioModel.__tablename__, str(str(exc.args) + ':' + str(exc.code))
+                    data.get('id_property'), StatusHistoryModel.__tablename__, str(str(exc.args) + ':' + str(exc.code))
                 )
             )
 
         finally:
             session.close()
 
-        return row
-
     def __repr__(self):
-        return "<JefeSicarioModel(id_jefe='%s', nombre_jefe='%s', id_grupo_sicario='%s')>" % \
-               (self.id_jefe, self.nombre_jefe, self.id_grupo_sicario)
+        return "<StatusHistoryModel(id_history='%s', property_id='%s', status_id='%s')>" % \
+               (self.id_history, self.property_id, self.status_id)

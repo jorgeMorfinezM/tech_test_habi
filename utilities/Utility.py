@@ -13,6 +13,7 @@ __version__ = "1.21.G02.1 ($Rev: 2 $)"
 from settings.settings import *
 from datetime import datetime
 import pytz
+import json
 
 
 # Define y obtiene el configurador para las constantes generales del sistema
@@ -64,3 +65,48 @@ def set_utc_date_data(data_date, timezone_date):
     utc_hour_convert = date_on_utc[1]
 
     return utc_date_convert, utc_hour_convert
+
+
+# Obtiene los datos de los filtros a aplicar en Busqueda de Propiedades
+def get_filter_property_file(filter_file):
+
+    with open(filter_file) as json_file:
+        json_object = json.load(json_file)
+
+        json_file.close()
+
+    return json_object
+
+
+# Crea el query string para aplicar filtros a Propiedades
+def make_query_string_filters(json_object):
+
+    filters_query_string = "?"
+
+    status_property = None
+    build_year = None
+    city_address = None
+    province_address = None
+
+    if 'estatus' in json_object:
+        # status_property = json_object['estatus']
+        status_property = '{}'.format(json_object['estatus'])
+
+        filters_query_string += "estatus=" + status_property + "&"
+
+    if 'anio_construccion' in json_object:
+        build_year = '{}'.format(json_object['anio_construccion'])
+
+        filters_query_string += "anio_construccion=" + build_year + "&"
+
+    if 'ciudad_propiedad' in json_object:
+        city_address = '{}'.format(json_object['ciudad_propiedad'])
+
+        filters_query_string += "ciudad_propiedad=" + city_address + "&"
+
+    if 'estado_propiedad' in json_object:
+        province_address = '{}'.format(json_object['estado_propiedad'])
+
+        filters_query_string += "estado_propiedad=" + province_address + "&"
+
+    return filters_query_string.rstrip('&')

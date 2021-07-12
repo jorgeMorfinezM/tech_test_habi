@@ -71,9 +71,37 @@ contenidos en los demás módulos según corresponde.
              modelos mencionados.
              
 * En el caso de uso de `Likes` a Propiedades, ¿qué modelo utilizar?
-    - R= Se tomó la desición de usar un modelo específico para `Likes` (y se le puede añadir atributos de `comments/
+    - R= Se tomó la decisión de usar un modelo específico para `Post` (y se le puede añadir atributos de `comments/
     comentarios`). Para este modelo, es necesario que el usuario esté logueado a la app y pueda rankear mediante el botón 
     Like a la propiedad que le agrade, así mismo pueda comentar para que este registro quede grabado en la BD. Así mismo 
     el usuario tendrá la opción de usar los filtros de búsqueda de propiedades según caso de uso 1 establecido.      
 
+### Datos del sistema:
+* Archivo del modelo de base de datos MySQL propuesto para la API nombrado: `model_db_property_search-Tech_test_habi.mwb` 
+* Archivo del script DLL de base de datos MySQL propuesto para la API nombrado: 
+`dll_db_property_search-Tech_test_Habi.sql` 
+* Archivo de imagen del diagrama de base de datos: `db_model_property-Tech_test_Habi.png`
+
+
+### NOTAS ADICIONALES: 
+En el directorio `settings` del código de la API, contiene un archivo `.env`, mismo que se oculta del repositorio 
+público, pero contiene las constantes de conexión a la base de datos, y otras constantes/variables usadas por la API 
+pertenecientes a la configuración de la misma, las cuales son: 
+
+- [x] FLASK_ENV
+- [x] FLASK_PORT
+- [x] FLASK_DEBUG
+- [x] DATABASE_URL
+- [x] APPLY_LOG_FILE
+- [x] LOGGER_TYPES
+- [x] FILE_LOG_EXTENSION
+- [x] APP_FILE_LOG_NAME
+- [x] DIRECTORY_LOG_FILES
+- [x] TIMEZONE
+- [x] API_KEY
+- [x] PROPERTY_TABLE
+- [x] STATUS_PROPERTY_TABLE
+- [x] USER_TABLE
+- [x] POST_TABLE
+- [x] STATUS_HISTORY_TABLE
                  

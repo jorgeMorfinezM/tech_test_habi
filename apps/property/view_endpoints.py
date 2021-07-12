@@ -123,10 +123,21 @@ def endpoint_flujo_datos():
     #     return HandlerResponse.request_unauthorized()
     # else:
 
-    query_string = request.query_string.decode('utf-8')
+    try:
+        uploaded_file = request.files['archivo']
+
+    except IOError as io_error:
+
+        return HandlerResponse.bad_request(ErrorMsg.ERROR_FILE_IS_NEEDED)
+
+    filter_json_object = get_filter_property_file(uploaded_file)
+
+    query_string = make_query_string_filters(filter_json_object)  # Para obtener datos del archivo cargado al endpoint
+
+    # query_string = request.query_string.decode('utf-8')  # En el caso que se tomen datos de variables del endpoint
 
     if request.method == 'GET':
-        # To GET ALL Data of the Banks:
+        # Obtiene los datos de las propiedades por filtro
 
         data = dict()
         properties_filter = None
@@ -138,31 +149,37 @@ def endpoint_flujo_datos():
         filter_spec_prop = []
         filter_spec_status = []
 
+        status_allowed = ['pre_venta', 'en_venta', 'vendido']
+
         if 'estatus' in query_string:
-            status_property = request.args.get('estatus')
+            # status_property = request.args.get('estatus')
+            status_property = '{}'.format(filter_json_object['estatus'])
 
             data['estatus'] = status_property
 
-            if ("pre_venta", "en_venta", "vendido") in status_property.lower():
+            if status_property.lower() in status_allowed:
 
                 filter_spec_status.append({'field': 'name_status', 'op': 'ilike', 'value': status_property})
 
         if 'anio_construccion' in query_string:
-            build_year = request.args.get('anio_construccion')
+            # build_year = request.args.get('anio_construccion')
+            build_year = '{}'.format(filter_json_object['anio_construccion'])
 
             data['anio_construccion'] = build_year
 
             filter_spec_prop.append({'field': 'year', 'op': 'eq', 'value': build_year})
 
         if 'ciudad_propiedad' in query_string:
-            city_address = request.args.get('ciudad_propiedad')
+            # city_address = request.args.get('ciudad_propiedad')
+            city_address = '{}'.format(filter_json_object['ciudad_propiedad'])
 
             data['ciudad_propiedad'] = city_address
 
             filter_spec_prop.append({'field': 'city', 'op': 'ilike', 'value': city_address})
 
         if 'estado_propiedad' in query_string:
-            province_address = request.args.get('estado_propiedad')
+            # province_address = request.args.get('estado_propiedad')
+            province_address = '{}'.format(filter_json_object['estado_propiedad'])
 
             data['estado_propiedad'] = province_address
 

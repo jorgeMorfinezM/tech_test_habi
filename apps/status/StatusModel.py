@@ -25,11 +25,7 @@ __history__ = """ """
 __version__ = "1.21.F21.1 ($Rev: 1 $)"
 
 import json
-import logging
-from datetime import datetime
-from pytz import timezone
-from sqlalchemy_filters import apply_filters
-from sqlalchemy import Column, Numeric, Integer, String, Date, Time, Sequence, Float
+from sqlalchemy import Column, Integer, String, Sequence
 from db_controller.database_backend import *
 from db_controller import mvc_exceptions as mvc_exc
 
@@ -200,7 +196,7 @@ class StatusModel(Base):
 
             logger.info('StatusModel data Id: %s', str(status_row))
 
-            session.query(StatusModel).filter(StatusModel.id_jefe == status_row.id_status).delete()
+            session.query(StatusModel).filter(StatusModel.id_status == status_row.id_status).delete()
 
             session.flush()
 

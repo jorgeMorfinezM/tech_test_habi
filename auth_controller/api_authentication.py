@@ -11,8 +11,7 @@ __version__ = "1.1.A19.1 ($Rev: 1 $)"
 
 from apps.user.AuthUserModel import AuthUserModel
 from passlib.hash import pbkdf2_sha256 as sha256
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required,
-                                get_jwt_identity, get_raw_jwt)
+from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, get_jwt_identity)
 from logger_controller.logger_control import *
 from db_controller.database_backend import *
 import uuid
@@ -29,9 +28,7 @@ def verify_hash(password, hash_passwd):
     return sha256.verify(password, hash_passwd)
 
 
-def user_registration(user_name, user_password):
-
-    password_hash = generate_hash(user_password)
+def user_registration(session, data):
 
     logger_type = 'ws'
 
@@ -39,33 +36,30 @@ def user_registration(user_name, user_password):
 
     try:
 
-        if verify_hash(user_password, password_hash):
+        if verify_hash(data.get('password'), data.get('password_hash')):
 
-            access_token = create_access_token(identity=user_name)
+            access_token = create_access_token(identity=data.get('username'))
 
-            refresh_token = create_refresh_token(identity=user_name)
+            refresh_token = create_refresh_token(identity=data.get('username'))
 
-            id_user = uuid.uuid1()
+            # id_user = uuid.uuid1()  # DO NOT USE IT
 
-            AuthUserModel.manage_user_authentication(id_user.int, user_name, user_password, password_hash)
+            AuthUserModel.insert_data(session, data)
 
-            # UsersAuth.manage_user_authentication('', user_name, user_password, password_hash)
+            log.info('User inserted/updated in database: %s', ' User_Name: "{}"'.format(data.get('username')))
 
-            log.info('User inserted/updated in database: %s',
-                     ' User_Name: "{}", Password_Hash: "{}" '.format(user_name,
-                                                                     password_hash))
-            return {
-                'message': 'Logged in as {}'.format(user_name),
+            return json.dumps({
+                'message': 'Logged in as {}'.format(data.get('username')),
                 'access_token': access_token,
                 'refresh_token': refresh_token
-            }
+            })
 
         else:
-            return {'message': 'Wrong credentials'}
+            return json.dumps({'message': 'Wrong credentials'})
 
     except SQLAlchemyError as error:
         raise mvc_exc.ConnectionError(
             '"{}@{}" Can\'t connect to database, verify data connection to "{}".\nOriginal Exception raised: {}'.format(
-                user_name, 'users_api', 'users_api', error
+                data.get('username'), 'user_auth', 'user_auth', error
             )
         )

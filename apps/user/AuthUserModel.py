@@ -25,12 +25,7 @@ __history__ = """ """
 __version__ = "1.21.F21.1 ($Rev: 1 $)"
 
 import json
-import logging
-from datetime import datetime
-from pytz import timezone
-from apps.property.PropertyModel import SicarioModel
-from sqlalchemy_filters import apply_filters
-from sqlalchemy import Column, Boolean, Integer, String, Date, Time, Sequence
+from sqlalchemy import Column, Boolean, Integer, String, Date, Sequence
 from db_controller.database_backend import *
 from db_controller import mvc_exceptions as mvc_exc
 

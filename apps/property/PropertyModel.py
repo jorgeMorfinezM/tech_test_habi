@@ -25,15 +25,12 @@ __history__ = """ """
 __version__ = "1.21.F21.1 ($Rev: 1 $)"
 
 import json
-import logging
-from datetime import datetime
-from pytz import timezone
-from apps.like.LikeModel import LikeModel
+from apps.post.PostModel import LikeModel
 from apps.status.StatusModel import StatusModel
 from apps.status_history.StatusHistoryModel import StatusHistoryModel
 from sqlalchemy import desc
 from sqlalchemy_filters import apply_filters
-from sqlalchemy import Column, Numeric, Integer, String, Date, Time, Sequence, Float
+from sqlalchemy import Column, Integer, String, Sequence, Float
 from db_controller.database_backend import *
 from db_controller import mvc_exceptions as mvc_exc
 

@@ -10,32 +10,23 @@ __license__ = ""
 __history__ = """ """
 __version__ = "1.21.G02.1 ($Rev: 2 $)"
 
-import re
-from flask import Blueprint, json, request, render_template
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, json, request
+# from flask_jwt_extended import jwt_required
 from db_controller.database_backend import *
-from .AuthUserModel import AuthUserModel
+from .PostModel import PostModel
 from handler_controller.ResponsesHandler import ResponsesHandler as HandlerResponse
 from handler_controller.messages import SuccessMsg, ErrorMsg
-from auth_controller.api_authentication import *
 from logger_controller.logger_control import *
 from utilities.Utility import *
 from datetime import datetime
 
 cfg_app = get_config_settings_app()
-user_auth_api = Blueprint('user_auth_api', __name__)
+post_api = Blueprint('post_api', __name__)
 # jwt = JWTManager(bancos_api)
 logger = configure_logger('ws')
 
 
-# Contiene la llamada al HTML que soporta la documentacion de la API,
-# sus metodos, y endpoints con los modelos de datos I/O
-@user_auth_api.route('/')
-def main():
-    return render_template('api_gas_manager.html')
-
-
-@user_auth_api.route('/', methods=['PUT', 'PATCH', 'GET', 'DELETE'])
+@post_api.route('/', methods=['POST', 'GET'])
 # @jwt_required
 def endpoint_processing_inversiones_data():
     conn_db, session_db = init_db_connection()
@@ -50,7 +41,7 @@ def endpoint_processing_inversiones_data():
     query_string = request.query_string.decode('utf-8')
 
     if request.method == 'POST':
-        # Actualizar datos de Usuarios
+        # APLICAR INVERSIONES
 
         data = request.get_json(force=True)
 
@@ -148,122 +139,5 @@ def endpoint_processing_inversiones_data():
 
         return HandlerResponse.resp_success(SuccessMsg.MSG_GET_RECORD, inversiones_on_db)
 
-    # elif request.method == 'PUT':
-    #
-    #     data = request.get_json(force=True)
-    #
-    #     gin_inv_model = GinInversionesModel(data)
-    #
-    #     if not data:
-    #         return HandlerResponse.request_conflict()
-    #
-    #     json_data = dict()
-    #
-    #     json_data = gin_inv_model.update_data(session_db, data)
-    #
-    #     logger.info('Bank updated Info: %s', str(json_data))
-    #
-    #     if not json_data:
-    #         return HandlerResponse.not_found()
-    #
-    #     return HandlerResponse.resp_success(json_data)
-    #
-    elif request.method == 'DELETE':
-
-        data = dict()
-        # data = request.get_json(force=True)
-
-        filter_spec = []
-
-        if not ('cuenta' in query_string) and ('canal' in query_string) and ('autorizacion' in query_string):
-            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
-        else:
-
-            cuenta = request.args.get('cuenta')
-
-            data['cuenta'] = cuenta
-
-            canal = request.args.get('canal')
-
-            data['canal'] = canal
-
-            autorizacion = request.args.get('autorizacion')
-
-            data['autorizacion'] = autorizacion
-
-        gin_inv_model = GinInversionesModel(data)
-
-        json_data = []
-
-        if not data:
-            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
-
-        json_response = gin_inv_model.delete_data(session_db, data)
-
-        logger.info('Inversion deleted: %s', json_response)
-
-        if not json_response:
-            return HandlerResponse.resp_success(ErrorMsg.ERROR_DATA_NOT_FOUND, {})
-
-        return HandlerResponse.resp_success(SuccessMsg.MSG_DELETED_RECORD, json_response)
-
     else:
         return HandlerResponse.not_found(ErrorMsg.ERROR_REQUEST_NOT_FOUND)
-
-
-@user_auth_api.route('/register/', methods=['POST'])
-def get_authentication():
-    conn_db, session_db = init_db_connection()
-
-    data = dict()
-    json_token = dict()
-
-    if request.method == 'POST':
-        # Insertar/Registrar datos de un Usuario y obtener el Token de autenticacion
-
-        data = request.get_json(force=True)
-
-        if not data or str(data) is None:
-            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
-
-        user_name = data['username']
-        password = data['password']
-        email = data['email']
-        # rfc = data['rfc_client']
-
-        regex_email = r"^[(a-z0-9\_\-\.)]+@[(a-z0-9\_\-\.)]+\.[(a-z)]{2,15}$"
-
-        regex_passwd = r"^[(A-Za-z0-9\_\-\.\$\#\&\*)(A-Za-z0-9\_\-\.\$\#\&\*)]+"
-
-        # regex_rfc = r
-        # "^([A-ZÑ&]{3,4})?(?:-?)?(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))?(?:-?)?([A-Z\d]{2})([A\d])$"
-
-        match_email = re.match(regex_email, email, re.M | re.I)
-
-        match_passwd = re.match(regex_passwd, password, re.M | re.I)
-
-        # match_rfc = re.match(regex_rfc, rfc, re.M | re.I)
-
-        if match_email and match_passwd:
-            password = password + '_' + cfg_app.api_key + '_' + email
-
-            password_hash = generate_hash(password)
-
-            data['username'] = user_name
-            data['password'] = password
-            data['password_hash'] = password_hash
-
-            json_token = json.dumps(user_registration(session_db, data))
-
-        else:
-            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
-
-        logger.info('Data User to Register on DB: %s', str(data))
-
-        if not json_token:
-            return HandlerResponse.response_success(SuccessMsg.MSG_RECORD_REGISTERED)
-
-        return HandlerResponse.response_resource_created(SuccessMsg.MSG_CREATED_RECORD, json_token)
-
-    else:
-        return HandlerResponse.request_not_found()
