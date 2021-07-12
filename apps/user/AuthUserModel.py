@@ -44,7 +44,7 @@ class AuthUserModel(Base):
      - Select:
     """
 
-    __tablename__ = cfg_db.hit_table
+    __tablename__ = cfg_db.user_table
 
     user_id = Column('id', Integer, USER_ID_SEQ, primary_key=True, server_default=USER_ID_SEQ.next_value())
     username = Column('username', String, nullable=False)

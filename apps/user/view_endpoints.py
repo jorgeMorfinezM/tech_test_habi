@@ -30,14 +30,14 @@ logger = configure_logger('ws')
 
 # Contiene la llamada al HTML que soporta la documentacion de la API,
 # sus metodos, y endpoints con los modelos de datos I/O
-@user_auth_api.route('/')
+@user_auth_api.route('/api/v1/manager/')
 def main():
-    return render_template('api_gas_manager.html')
+    return render_template('api_property_manager.html')
 
 
 @user_auth_api.route('/', methods=['PUT', 'PATCH', 'GET', 'DELETE'])
 # @jwt_required
-def endpoint_processing_inversiones_data():
+def endpoint_process_user_data():
     conn_db, session_db = init_db_connection()
 
     headers = request.headers
@@ -47,168 +47,96 @@ def endpoint_processing_inversiones_data():
     #     return HandlerResponse.request_unauthorized()
     # else:
 
-    query_string = request.query_string.decode('utf-8')
+    data = dict()
 
-    if request.method == 'POST':
+    if request.method in ('PUT', 'PATCH'):
         # Actualizar datos de Usuarios
+
+        json_user_updated = None
 
         data = request.get_json(force=True)
 
-        gin_inv_model = GinInversionesModel(data)
+        user_model = AuthUserModel(data)
 
         if not data or str(data) is None:
             return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
 
-        logger.info('Data Json Inversion to Manage on DB: %s', str(data))
+        if not data or str(data) is None:
+            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
 
-        fechaRecepcion = str()
-        horaRecepcion = str()
-        fechaAplicacion = str()
-        horaAplicacion = str()
+        user_name = data['username']
+        password = data['password']
+        email = data['email']
+        # rfc = data['rfc_client']
 
-        fecha_recepcion = data.get('fechaRecepcion')
-        hora_recepcion = data.get('horaRecepcion')
+        regex_email = r"^[(a-z0-9\_\-\.)]+@[(a-z0-9\_\-\.)]+\.[(a-z)]{2,15}$"
 
-        if fecha_recepcion and hora_recepcion:
-            fecha_hora_recepcion = str(datetime.strptime(str(fecha_recepcion), "%Y-%m-%d")) + " " + \
-                                   str(datetime.strptime(str(hora_recepcion), "%H:%M:%S"))
+        regex_passwd = r"^[(A-Za-z0-9\_\-\.\$\#\&\*)(A-Za-z0-9\_\-\.\$\#\&\*)]+"
 
-            fechaRecepcion, horaRecepcion = set_utc_date_data(fecha_hora_recepcion, cfg_app.date_timezone)
+        # regex_rfc = r
+        # "^([A-ZÑ&]{3,4})?(?:-?)?(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))?(?:-?)?([A-Z\d]{2})([A\d])$"
 
-        fecha_aplicacion = data.get('fechaAplicacion')
-        hora_aplicacion = data.get('horaAplicacion')
+        match_email = re.match(regex_email, email, re.M | re.I)
 
-        if fecha_aplicacion and hora_aplicacion:
-            fecha_hora_aplicacion = str(datetime.strptime(str(fecha_aplicacion), "%Y-%m-%d")) + " " + \
-                                   str(datetime.strptime(str(hora_aplicacion), "%H:%M:%S"))
+        match_passwd = re.match(regex_passwd, password, re.M | re.I)
 
-            fechaAplicacion, horaAplicacion = set_utc_date_data(fecha_hora_aplicacion, cfg_app.date_timezone)
+        # match_rfc = re.match(regex_rfc, rfc, re.M | re.I)
 
-        data_insert = {
-            'cuenta': data.get('cuenta'),
-            'estatus': data.get('estatus'),
-            'monto': data.get('monto'),
-            'autorizacion': data.get('autorizacion'),
-            'canal': data.get('canal'),
-            'origen': data.get('origen'),
-            'comisionistaId': data.get('comisionistaId'),
-            'transaccionId': data.get('transaccionId'),
-            'motivo': data.get('motivo'),
-            'fechaRecepcion': fechaRecepcion,
-            'horaRecepcion': horaRecepcion,
-            'fechaAplicacion': fechaAplicacion,
-            'horaAplicacion': horaAplicacion,
-            'conciliacionId': data.get('conciliacionId')
-        }
+        if match_email and match_passwd:
+            password = password + '_' + cfg_app.api_key + '_' + email
 
-        json_bank_added = gin_inv_model.insert_data(session_db, data_insert)
+            password_hash = generate_hash(password)
 
-        if not json_bank_added:
-            return HandlerResponse.resp_success(SuccessMsg.MSG_RECORD_REGISTERED, {})
+            data['username'] = user_name
+            data['password'] = password_hash
 
-        return HandlerResponse.resp_success(SuccessMsg.MSG_CREATED_RECORD, json_bank_added)
+            if request.method == 'PUT':
+                json_user_updated = user_model.update_data(session_db, data)
+            elif request.method == 'PATCH':
+                json_user_updated = user_model.user_update_password(session_db, data)
+
+        else:
+            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
+
+        logger.info('User updated Info: %s', str(json_user_updated))
+
+        if not json_user_updated:
+            return HandlerResponse.response_success(ErrorMsg.ERROR_DATA_NOT_FOUND)
+
+        return HandlerResponse.response_success(SuccessMsg.MSG_UPDATED_RECORD, json_user_updated)
 
     elif request.method == 'GET':
-        # To GET ALL Data of the Banks:
+        # To GET ALL Data of the Users:
 
-        data = dict()
-        inversiones_on_db = None
+        users_on_db = None
 
-        filter_spec = []
+        user_model = AuthUserModel(data)
 
-        if 'canal' in query_string:
-            canal = request.args.get('canal')
+        users_on_db = user_model.get_all_users(session_db)
 
-            data['canal'] = canal
+        if not bool(users_on_db) or not users_on_db or "[]" == users_on_db:
+            return HandlerResponse.response_success(ErrorMsg.ERROR_DATA_NOT_FOUND, {})
 
-            filter_spec.append({'field': 'canal', 'op': '==', 'value': canal})
+        return HandlerResponse.response_success(SuccessMsg.MSG_GET_RECORD, users_on_db)
 
-        if 'fecha' in query_string:
-            fecha = request.args.get('fecha')
-
-            fecha_filter = datetime.strptime(str(fecha), "%Y-%m-%d")
-
-            data['fechaRecepcion'] = fecha_filter
-
-            filter_spec.append({'field': 'fechaRecepcion', 'op': '==', 'value': fecha_filter})
-
-        if 'estatus' in query_string:
-            status_inversion = request.args.get('estatus')
-
-            data['estatus'] = status_inversion
-
-            filter_spec.append({'field': 'estatus', 'op': 'ilike', 'value': status_inversion})
-
-        gin_inv_model = GinInversionesModel(data)
-
-        inversiones_on_db = gin_inv_model.get_properties_by_filters(session_db, filter_spec)
-
-        if not bool(inversiones_on_db) or not inversiones_on_db or "[]" == inversiones_on_db:
-            return HandlerResponse.resp_success(ErrorMsg.ERROR_DATA_NOT_FOUND, {})
-
-        return HandlerResponse.resp_success(SuccessMsg.MSG_GET_RECORD, inversiones_on_db)
-
-    # elif request.method == 'PUT':
-    #
-    #     data = request.get_json(force=True)
-    #
-    #     gin_inv_model = GinInversionesModel(data)
-    #
-    #     if not data:
-    #         return HandlerResponse.request_conflict()
-    #
-    #     json_data = dict()
-    #
-    #     json_data = gin_inv_model.update_data(session_db, data)
-    #
-    #     logger.info('Bank updated Info: %s', str(json_data))
-    #
-    #     if not json_data:
-    #         return HandlerResponse.not_found()
-    #
-    #     return HandlerResponse.resp_success(json_data)
-    #
     elif request.method == 'DELETE':
 
-        data = dict()
-        # data = request.get_json(force=True)
+        user_model = AuthUserModel(data)
 
-        filter_spec = []
-
-        if not ('cuenta' in query_string) and ('canal' in query_string) and ('autorizacion' in query_string):
-            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
-        else:
-
-            cuenta = request.args.get('cuenta')
-
-            data['cuenta'] = cuenta
-
-            canal = request.args.get('canal')
-
-            data['canal'] = canal
-
-            autorizacion = request.args.get('autorizacion')
-
-            data['autorizacion'] = autorizacion
-
-        gin_inv_model = GinInversionesModel(data)
-
-        json_data = []
-
-        if not data:
+        if not data or str(data) is None:
             return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
 
-        json_response = gin_inv_model.delete_data(session_db, data)
+        json_user_deleted = user_model.delete_data(session_db, data)
 
-        logger.info('Inversion deleted: %s', json_response)
+        logger.info('User deleted: %s', json_user_deleted)
 
-        if not json_response:
-            return HandlerResponse.resp_success(ErrorMsg.ERROR_DATA_NOT_FOUND, {})
+        if not json_user_deleted:
+            return HandlerResponse.response_success(ErrorMsg.ERROR_DATA_NOT_FOUND)
 
-        return HandlerResponse.resp_success(SuccessMsg.MSG_DELETED_RECORD, json_response)
+        return HandlerResponse.response_success(SuccessMsg.MSG_DELETED_RECORD, json_user_deleted)
 
     else:
-        return HandlerResponse.not_found(ErrorMsg.ERROR_REQUEST_NOT_FOUND)
+        return HandlerResponse.request_method_not_allowed(ErrorMsg.ERROR_METHOD_NOT_ALLOWED)
 
 
 @user_auth_api.route('/register/', methods=['POST'])

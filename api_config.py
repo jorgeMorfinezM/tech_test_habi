@@ -14,12 +14,10 @@ import threading
 import time
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from apps.api_authentication.view_endpoints import authorization_api
-from apps.bancos.view_endpoints import bancos_api
-from apps.credenciales.view_endpoints import credenciales_api
-from apps.status.view_endpoints import inversiones_api
+from apps.user.view_endpoints import user_auth_api
+from apps.status_history.view_endpoints import status_history_api
+from apps.status.view_endpoints import status_api
 from apps.property.view_endpoints import property_api
-from apps.robot_bancario.view_endpoints import robot_api
 # from db_controller.database_backend import *
 from utilities.Utility import *
 
@@ -30,7 +28,7 @@ cfg_app = get_config_settings_app()
 def create_app():
     app_api = Flask(__name__, static_url_path='/static')
 
-    app_api.config['JWT_SECRET_KEY'] = '4p1/g4s_#m4n4g3r%$=2021-07-03/'
+    app_api.config['JWT_SECRET_KEY'] = '4p1/t3ch_t3st_#m4n4g3r%$_h4b1=2021-07-07/'
     app_api.config['JWT_BLACKLIST_ENABLED'] = False
     app_api.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
     app_api.config['JWT_ERROR_MESSAGE_KEY'] = 'message'
@@ -42,19 +40,18 @@ def create_app():
 
     app_api.config['SQLALCHEMY_DATABASE_URI'] = cfg_db.Development.SQLALCHEMY_DATABASE_URI.__str__()
 
-    # BANCO URL
-    app_api.register_blueprint(bancos_api, url_prefix='/api/v1/bancos/')
+    # USERS_AUTH URL
+    app_api.register_blueprint(user_auth_api, url_prefix='/api/v1/manager/user/')
+    app_api.register_blueprint(user_auth_api, url_prefix='/api/v1/manager/user/register/')
 
-    # CREDENCIALES URL
-    app_api.register_blueprint(credenciales_api, url_prefix='/api/v1/bancos/<int:IdBanco>/credenciales/')
+    # HISTORY STATUS URL
+    app_api.register_blueprint(status_history_api, url_prefix='/api/v1/manager/status/history/')
 
-    # INVERSIONES URL
-    app_api.register_blueprint(inversiones_api, url_prefix='/api/v1/status/')
+    # STATUS URL
+    app_api.register_blueprint(status_api, url_prefix='/api/v1/manager/status/')
 
-    # PROPERTY
-    app_api.register_blueprint(property_api, url_prefix='/api/v1/property/')
-
-    # # ROBOT CONFIGURATION URL
-    app_api.register_blueprint(robot_api, url_prefix='/api/v1/bancos/<int:IdBanco>/robot/configuraciones/')
+    # PROPERTY URL
+    app_api.register_blueprint(property_api, url_prefix='/api/v1/manager/property/')
+    app_api.register_blueprint(property_api, url_prefix='/api/v1/manager/property/filter')
 
     return app_api

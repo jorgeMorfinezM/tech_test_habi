@@ -25,9 +25,7 @@ __history__ = """ """
 __version__ = "1.21.F21.1 ($Rev: 1 $)"
 
 import json
-from apps.post.PostModel import LikeModel
 from apps.status.StatusModel import StatusModel
-from apps.status_history.StatusHistoryModel import StatusHistoryModel
 from sqlalchemy import desc
 from sqlalchemy_filters import apply_filters
 from sqlalchemy import Column, Integer, String, Sequence, Float
@@ -364,6 +362,8 @@ class PropertyModel(Base):
 
     @staticmethod
     def get_properties_by_filters(session, filter_spec_prop=list, filter_spec_status=list):
+
+        from apps.status_history.StatusHistoryModel import StatusHistoryModel
 
         query_result_prop = None
         query_result_status = None

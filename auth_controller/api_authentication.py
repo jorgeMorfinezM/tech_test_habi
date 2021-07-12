@@ -44,7 +44,9 @@ def user_registration(session, data):
 
             # id_user = uuid.uuid1()  # DO NOT USE IT
 
-            AuthUserModel.insert_data(session, data)
+            data['password'] = access_token
+
+            AuthUserModel(data).insert_data(session, data)
 
             log.info('User inserted/updated in database: %s', ' User_Name: "{}"'.format(data.get('username')))
 
