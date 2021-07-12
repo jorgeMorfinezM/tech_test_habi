@@ -65,5 +65,15 @@ contenidos en los demás módulos según corresponde.
 
 * ¿Los endpoints para ambos casos de uso requeridos sostienen los modelos y sus relaciones directas?
     - R= SI. Cada modelo entre si es independiente para su mantenimiento (funciones CRUD) pero no para su funcionalidad.
-             Esto es que si cada modelo      
+             Esto es que si el modelo `Property` y `Status` están relacionados, entonces el caso de uso de consulta de 
+             propiedades por un usuario debera de contener la relación correspondiente en el modelo `status_history` a 
+             cada modelo y en el endpoint GET para `Property` establecer un URI a esta consulta que involucra los 3 
+             modelos mencionados.
+             
+* En el caso de uso de `Likes` a Propiedades, ¿qué modelo utilizar?
+    - R= Se tomó la desición de usar un modelo específico para `Likes` (y se le puede añadir atributos de `comments/
+    comentarios`). Para este modelo, es necesario que el usuario esté logueado a la app y pueda rankear mediante el botón 
+    Like a la propiedad que le agrade, así mismo pueda comentar para que este registro quede grabado en la BD. Así mismo 
+    el usuario tendrá la opción de usar los filtros de búsqueda de propiedades según caso de uso 1 establecido.      
+
                  
