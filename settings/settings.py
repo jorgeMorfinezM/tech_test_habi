@@ -30,7 +30,7 @@ class Constants:
         """
         DEBUG = True
         TESTING = True
-        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL').__str__()
 
     class Production(object):
         """

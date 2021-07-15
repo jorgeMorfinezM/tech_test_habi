@@ -12,6 +12,7 @@ __version__ = "1.21.G02.1 ($Rev: 2 $)"
 
 from settings.settings import *
 from datetime import datetime
+import base64
 import pytz
 import json
 
@@ -70,8 +71,22 @@ def set_utc_date_data(data_date, timezone_date):
 # Obtiene los datos de los filtros a aplicar en Busqueda de Propiedades
 def get_filter_property_file(filter_file):
 
-    with open(filter_file) as json_file:
-        json_object = json.load(json_file)
+    # print(filter_file.filename)
+
+    with open(filter_file, "rb") as json_file:
+
+        my_new_string_value = json_file.name
+
+        # print(my_new_string_value)
+
+        # xml_to_bytes = bytes(my_new_string_value, 'utf-8')
+
+        xml_decoded = my_new_string_value.decode('utf-8')
+
+        xml_decoded = xml_decoded.replace("b'", "")
+        xml_decoded = xml_decoded.replace("'", "")
+
+        json_object = json.loads(json.dumps(xml_decoded))
 
         json_file.close()
 
@@ -88,24 +103,27 @@ def make_query_string_filters(json_object):
     city_address = None
     province_address = None
 
+    json_object = json.loads(json_object)
+
     if 'estatus' in json_object:
         # status_property = json_object['estatus']
-        status_property = '{}'.format(json_object['estatus'])
+        # status_property = '{}'.format(json_object['estatus'])
+        status_property = json_object.get('estatus')
 
         filters_query_string += "estatus=" + status_property + "&"
 
     if 'anio_construccion' in json_object:
-        build_year = '{}'.format(json_object['anio_construccion'])
+        build_year = json_object.get('anio_construccion')
 
-        filters_query_string += "anio_construccion=" + build_year + "&"
+        filters_query_string += "anio_construccion=" + str(build_year) + "&"
 
     if 'ciudad_propiedad' in json_object:
-        city_address = '{}'.format(json_object['ciudad_propiedad'])
+        city_address = json_object.get('ciudad_propiedad')
 
         filters_query_string += "ciudad_propiedad=" + city_address + "&"
 
     if 'estado_propiedad' in json_object:
-        province_address = '{}'.format(json_object['estado_propiedad'])
+        province_address = json_object.get('estado_propiedad')
 
         filters_query_string += "estado_propiedad=" + province_address + "&"
 

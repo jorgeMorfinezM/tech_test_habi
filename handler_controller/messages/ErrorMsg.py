@@ -7,3 +7,4 @@ ERROR_REQUEST_UNAUTHORIZED = 'Solicitud No Autorizada/Falta Token de autenticaci
 ERROR_REQUEST_NOT_FOUND = "Solicitud no localizada"
 SERVER_ERROR = "Error en servidor"
 ERROR_METHOD_NOT_ALLOWED = "Método no permitido"
+ERROR_FILE_IS_NEEDED = "'Archivo' es obligatorio"

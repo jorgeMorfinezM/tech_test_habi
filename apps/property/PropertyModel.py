@@ -361,10 +361,11 @@ class PropertyModel(Base):
         return json.dumps(property_data)
 
     @staticmethod
-    def get_properties_by_filters(session, filter_spec_prop=list, filter_spec_status=list):
+    def get_properties_by_filters(session, filter_spec_prop, filter_spec_status):
 
         from apps.status_history.StatusHistoryModel import StatusHistoryModel
 
+        query = None
         query_result_prop = None
         query_result_status = None
         query_result = None
@@ -373,10 +374,16 @@ class PropertyModel(Base):
         if filter_spec_prop is None:
             query_result_prop = session.query(PropertyModel).all()
 
-        query = session.query(PropertyModel)
+        if type(filter_spec_prop) == tuple:
+            query = session.query(PropertyModel).filter(*filter_spec_prop)
+        elif type(filter_spec_prop) == dict:
+            query = session.query(PropertyModel).filter(**filter_spec_prop)
 
-        filtered_query = apply_filters(query, filter_spec_prop)
+        # query = session.query(PropertyModel)
+
+        filtered_query = apply_filters(session.query(PropertyModel).all(), filter_spec_prop)
         query_result_prop = filtered_query.all()
+        # query_result_prop = query.all()
 
         logger.info('Query filtered Property resultSet: %s', str(query_result_prop))
 

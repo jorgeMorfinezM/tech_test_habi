@@ -12,6 +12,7 @@ __version__ = "1.21.G02.1 ($Rev: 2 $)"
 
 import re
 from flask import Blueprint, json, request, render_template
+from flask_jwt_extended import JWTManager
 from flask_jwt_extended import jwt_required
 from db_controller.database_backend import *
 from .AuthUserModel import AuthUserModel
@@ -24,7 +25,7 @@ from datetime import datetime
 
 cfg_app = get_config_settings_app()
 user_auth_api = Blueprint('user_auth_api', __name__)
-# jwt = JWTManager(bancos_api)
+# jwt = JWTManager(user_auth_api)
 logger = configure_logger('ws')
 
 
@@ -184,14 +185,14 @@ def get_authentication():
             json_token = json.dumps(user_registration(session_db, data))
 
         else:
-            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT)
+            return HandlerResponse.request_conflict(ErrorMsg.ERROR_REQUEST_DATA_CONFLICT, data)
 
         logger.info('Data User to Register on DB: %s', str(data))
 
         if not json_token:
-            return HandlerResponse.response_success(SuccessMsg.MSG_RECORD_REGISTERED)
+            return HandlerResponse.response_success(SuccessMsg.MSG_RECORD_REGISTERED, json_token)
 
         return HandlerResponse.response_resource_created(SuccessMsg.MSG_CREATED_RECORD, json_token)
 
     else:
-        return HandlerResponse.request_not_found()
+        return HandlerResponse.request_not_found(ErrorMsg.ERROR_REQUEST_NOT_FOUND)

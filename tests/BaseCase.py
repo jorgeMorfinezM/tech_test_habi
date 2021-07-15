@@ -18,8 +18,10 @@ class BaseCase(unittest.TestCase):
 
     def setUp(self):
 
-        app = create_app()
+        app, jwt = create_app()
 
         app.config['TESTING'] = True
         self.app = app.test_client()
+
+        jwt.init_app(app)
 

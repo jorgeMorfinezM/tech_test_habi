@@ -38,11 +38,11 @@ def create_app():
     if not 'development' == cfg_app.flask_api_env:
         app_api.config['SQLALCHEMY_DATABASE_URI'] = cfg_db.Production.SQLALCHEMY_DATABASE_URI.__str__()
 
-    app_api.config['SQLALCHEMY_DATABASE_URI'] = cfg_db.Development.SQLALCHEMY_DATABASE_URI.__str__()
+    app_api.config['SQLALCHEMY_DATABASE_URI'] = cfg_db.Development.SQLALCHEMY_DATABASE_URI
 
     # USERS_AUTH URL
     app_api.register_blueprint(user_auth_api, url_prefix='/api/v1/manager/user/')
-    app_api.register_blueprint(user_auth_api, url_prefix='/api/v1/manager/user/register/')
+    # app_api.register_blueprint(user_auth_api, url_prefix='/api/v1/manager/user/register/')
 
     # HISTORY STATUS URL
     app_api.register_blueprint(status_history_api, url_prefix='/api/v1/manager/status/history/')
@@ -52,6 +52,10 @@ def create_app():
 
     # PROPERTY URL
     app_api.register_blueprint(property_api, url_prefix='/api/v1/manager/property/')
-    app_api.register_blueprint(property_api, url_prefix='/api/v1/manager/property/filter')
+    # app_api.register_blueprint(property_api, url_prefix='/api/v1/manager/property/filter')
 
-    return app_api
+    jwt = JWTManager(app_api)
+
+    jwt.init_app(app_api)
+
+    return app_api, jwt

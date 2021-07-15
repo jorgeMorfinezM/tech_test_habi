@@ -20,8 +20,9 @@ app = Flask(__name__)
 
 class ResponsesHandler(exceptions.HTTPException):
 
-    @app.errorhandler(200)
-    def response_success(self, msg, data):
+    # @app.errorhandler(200)
+    @staticmethod
+    def response_success(msg, data):
 
         if bool(data):
             data_msg = json.loads(data)
@@ -36,10 +37,11 @@ class ResponsesHandler(exceptions.HTTPException):
         resp = jsonify(message)
         status_code = 200
 
-        return resp, status_code
+        return resp, int(status_code)
 
-    @app.errorhandler(201)
-    def response_resource_created(self, data, msg):
+    # @app.errorhandler(201)
+    @staticmethod
+    def response_resource_created(data, msg):
 
         if bool(data):
             data_msg = json.loads(data)
@@ -56,8 +58,9 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(400)
-    def bad_request(self, msg):
+    # @app.errorhandler(400)
+    @staticmethod
+    def bad_request(msg):
         message = {
             'message': msg + request.url,
             'data': {}
@@ -68,11 +71,12 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(401)
-    def request_unauthorized(self, msg):
+    # @app.errorhandler(401)
+    @staticmethod
+    def request_unauthorized(msg, data_msg):
         message = {
             'message': msg + request.url,
-            'data': {}
+            'data': data_msg
         }
 
         resp = jsonify(message)
@@ -80,8 +84,9 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(404)
-    def request_not_found(self, msg):
+    # @app.errorhandler(404)
+    @staticmethod
+    def request_not_found(msg):
         message = {
             'message': msg + request.url,
             'data': {}
@@ -92,8 +97,9 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(405)
-    def request_method_not_allowed(self, msg):
+    # @app.errorhandler(405)
+    @staticmethod
+    def request_method_not_allowed(msg):
         message = {
             'message': msg + request.url,
             'data': {}
@@ -104,11 +110,12 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(409)
-    def request_conflict(self, msg):
+    # @app.errorhandler(409)
+    @staticmethod
+    def request_conflict(msg, data_msg):
         message = {
             'message': msg + request.url,
-            'data': {}
+            'data': data_msg
         }
 
         resp = jsonify(message)
@@ -116,8 +123,9 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(500)
-    def internal_server_error(self, msg):
+    # @app.errorhandler(500)
+    @staticmethod
+    def internal_server_error(msg):
         message = {
             'message': msg + request.url,
             'data': {}
@@ -128,8 +136,9 @@ class ResponsesHandler(exceptions.HTTPException):
 
         return resp, status_code
 
-    @app.errorhandler(503)
-    def service_unavailable(self, msg):
+    # @app.errorhandler(503)
+    @staticmethod
+    def service_unavailable(msg):
         message = {
             'message': msg + request.url,
             'data': {}

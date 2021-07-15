@@ -112,7 +112,7 @@ def endpoint_processing_properties_data():
             return HandlerResponse.request_method_not_allowed(ErrorMsg.ERROR_METHOD_NOT_ALLOWED)
 
 
-@property_api.route('/filter', methods=['GET'])
+@property_api.route('/filter/', methods=['GET'])
 def endpoint_flujo_datos():
     conn_db, session_db = init_db_connection()
 
@@ -124,7 +124,10 @@ def endpoint_flujo_datos():
     # else:
 
     try:
-        uploaded_file = request.files['archivo']
+        uploaded_file = request.files['archivo'].read()
+        # uploaded_file = str(request.files['archivo'], 'utf-8')
+
+        # print(uploaded_file.name, uploaded_file.filename)
 
     except IOError as io_error:
 
@@ -151,9 +154,11 @@ def endpoint_flujo_datos():
 
         status_allowed = ['pre_venta', 'en_venta', 'vendido']
 
+        json_object = json.loads(filter_json_object)
+
         if 'estatus' in query_string:
             # status_property = request.args.get('estatus')
-            status_property = '{}'.format(filter_json_object['estatus'])
+            status_property = '{}'.format(json_object.get('estatus'))
 
             data['estatus'] = status_property
 
@@ -163,7 +168,7 @@ def endpoint_flujo_datos():
 
         if 'anio_construccion' in query_string:
             # build_year = request.args.get('anio_construccion')
-            build_year = '{}'.format(filter_json_object['anio_construccion'])
+            build_year = '{}'.format(json_object.get('anio_construccion'))
 
             data['anio_construccion'] = build_year
 
@@ -171,7 +176,7 @@ def endpoint_flujo_datos():
 
         if 'ciudad_propiedad' in query_string:
             # city_address = request.args.get('ciudad_propiedad')
-            city_address = '{}'.format(filter_json_object['ciudad_propiedad'])
+            city_address = '{}'.format(json_object.get('ciudad_propiedad'))
 
             data['ciudad_propiedad'] = city_address
 
@@ -179,7 +184,7 @@ def endpoint_flujo_datos():
 
         if 'estado_propiedad' in query_string:
             # province_address = request.args.get('estado_propiedad')
-            province_address = '{}'.format(filter_json_object['estado_propiedad'])
+            province_address = '{}'.format(json_object.get('estado_propiedad'))
 
             data['estado_propiedad'] = province_address
 

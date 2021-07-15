@@ -11,7 +11,6 @@ __history__ = """ """
 __version__ = "1.21.G02.1 ($Rev: 2 $)"
 
 import api_config
-from flask_jwt_extended import JWTManager
 from utilities.Utility import *
 # from db_controller.database_backend import *
 from logger_controller.logger_control import *
@@ -23,11 +22,7 @@ cfg_app = get_config_settings_app()
 
 if __name__ == '__main__':
 
-    app = api_config.create_app()
-
-    jwt = JWTManager(app)
-
-    jwt.init_app(app)
+    app, jwt = api_config.create_app()
 
     logger_type = 'api'
 

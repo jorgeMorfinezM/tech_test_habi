@@ -173,5 +173,5 @@ class TestUserLogin(BaseCase):
 
         # Then
         self.assertEqual(str, type(user_response['message']))
-        self.assertEqual(int, type(user_response['data']))
+        self.assertEqual(str, type(user_response['data']))
 

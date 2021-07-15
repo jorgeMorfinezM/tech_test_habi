@@ -9,6 +9,7 @@ __license__ = ""
 __history__ = """ """
 __version__ = "1.1.A25.1 ($Rev: 1 $)"
 
+import os
 import unittest
 import json
 from tests.BaseCase import BaseCase
@@ -16,19 +17,41 @@ from tests.BaseCase import BaseCase
 
 class TestManageProperty(BaseCase):
 
-    def search_properties_filters(self):
-
+    def test_search_property_filters(self):
         payload = {}
-        files = [
-            ('archivo', ('file', open('test/filters_properties_test.json', 'rb'), 'application/octet-stream'))
-        ]
+        # files = [('archivo', ('file', open('filters_properties_test.json', 'rb'), 'application/octet-stream'))]
+
+        my_file_load = os.path.join("filters_properties_test.json")
+
+        # files = {'archivo': open('filters_properties_test.json', 'rb')}
+
+        # files = {
+        #     'data': (None, json.dumps(payload), 'application/json'),
+        #     'archivo': (os.path.basename('filters_properties_test.json'), open('filters_properties_test.json', 'rb'),
+        #                 'application/octet-stream')
+        # }
 
         header_request = {
             "Content-Type": "application/json",
         }
 
-        response_search = self.app.get('/api/v1/manager/property/filter',
-                                       headers=header_request, data=payload, files=files)
+        # response_search = self.app.get('/api/v1/manager/property/filter', headers=header_request, data=payload,
+        #                                files=files)
+        # response_search = self.app.get('/api/v1/manager/property/filter/', files=files)
+
+        # my_file = FileStorage(
+        #     stream=open(my_file_load, "rb"),
+        #     filename="filters_properties_test.json",
+        #     content_type="application/octet-stream",
+        # ),
+
+        response_search = self.app.get(
+            "/api/v1/manager/property/filter/",
+            data={
+                "archivo": open(my_file_load, "rb"),
+            },
+            content_type="multipart/form-data"
+        )
 
         # When
         list_property_response = json.loads(response_search.get_data(as_text=True))
