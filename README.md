@@ -83,6 +83,20 @@ contenidos en los demás módulos según corresponde.
 * Archivo de imagen del diagrama de base de datos: `db_model_property-Tech_test_Habi.png`
 
 
+### Ejecutar Pruebas Unitarias
+Instrucciones:
+
+* 1.- Actualizar el repositorio local con el último commit.
+* 2.- En una línea de comandos, se puede ejecutar el script: `./unit_test_execute_script.sh`, el cual contiene los comandos 
+necesarios para ejecutar todas las pruebas unitarias, de requerir ejecutar las pruebas cada una por separado, hacer:
+* 3.- Ejecutar pruebas por separado:
+
+    3.1.- En una consola de comandos (Terminal), ejecutar en el mismo orden:
+      
+        python3 -m unittest -v tests.BaseCase
+        python3 -m unittest -v tests.UserAuthenticationTest.TestUserLogin
+        python3 -m unittest -v tests.ManagePropertyTest.TestManageProperty 
+
 ### NOTAS ADICIONALES: 
 En el directorio `settings` del código de la API, contiene un archivo `.env`, mismo que se oculta del repositorio 
 público, pero contiene las constantes de conexión a la base de datos, y otras constantes/variables usadas por la API 

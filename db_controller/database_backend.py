@@ -14,15 +14,13 @@ import json
 import logging
 from datetime import datetime
 
-import psycopg2
+import pymysql
 from sqlalchemy import create_engine, ForeignKey
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy.engine.reflection import Inspector
-
 from db_controller import mvc_exceptions as mvc_exc
 from logger_controller.logger_control import *
 from utilities.Utility import *
@@ -46,16 +44,16 @@ def create_engine_db():
 
     # For Test connection:
 
-    engine = create_engine(cfg_db.Development.SQLALCHEMY_DATABASE_URI.__str__(),
-                           client_encoding="utf8",
+    engine = create_engine('mysql+pymysql://admin:HANrhz5u7e3jKqVQ@3.130.126.210:3309/habi_db',
                            execution_options={"isolation_level": "REPEATABLE READ"})
 
     if not 'development' == cfg_app.flask_api_env:
         engine = create_engine(cfg_db.Production.SQLALCHEMY_DATABASE_URI.__str__(),
-                               client_encoding="utf8",
                                execution_options={"isolation_level": "REPEATABLE READ"})
 
     logger.info("Engine Created by URL: {}".format(cfg_db.Development.SQLALCHEMY_DATABASE_URI.__str__()))
+
+    print(f"URL DB: {cfg_db.Development.SQLALCHEMY_DATABASE_URI}")
 
     return engine
 
@@ -254,147 +252,3 @@ def get_current_date_from_db(session, conn, cursor):
         disconnect_from_db(conn)
 
     return last_updated_date
-
-
-'''
-class UsersAuthModel(Base):
-    r"""
-    Class to instance User data to authenticate the API.
-    Transactions:
-     - Insert: Add user data to the database if not exists.
-     - Update: Update user data on the database if exists.
-    """
-
-    cfg_db = get_config_constant_file()
-
-    __tablename__ = cfg['DB_AUTH_OBJECT']['USERS_AUTH']
-
-    user_id = Column(cfg['DB_AUTH_COLUMNS_DATA']['USER_AUTH']['USER_ID'], Numeric, primary_key=True)
-    user_name = Column(cfg['DB_AUTH_COLUMNS_DATA']['USER_AUTH']['USER_NAME'], String, primary_key=True)
-    user_password = Column(cfg['DB_AUTH_COLUMNS_DATA']['USER_AUTH']['USER_PASSWORD'], String)
-    password_hash = Column(cfg['DB_AUTH_COLUMNS_DATA']['USER_AUTH']['PASSWORD_HASH'], String)
-    last_update_date = Column(cfg['DB_AUTH_COLUMNS_DATA']['USER_AUTH']['LAST_UPDATE_DATE'], String)
-
-    @staticmethod
-    def manage_user_authentication(user_id, user_name, user_password, password_hash):
-
-        try:
-
-            user_verification = validate_user_exists(user_name)
-
-            # insert validation
-            if user_verification[0]:
-
-                # update method
-                update_user_password_hashed(user_name, password_hash)
-
-            else:
-                # insert
-
-                insert_user_authenticated(user_id, user_name, user_password, password_hash)
-
-        except SQLAlchemyError as e:
-            logger.exception('An exception was occurred while execute transactions: %s', e)
-            raise mvc_exc.ItemNotStored(
-                'Can\'t insert user_id: "{}" with user_name: {} because it\'s not stored in "{}"'.format(
-                    user_id, user_name, UsersAuth.__tablename__
-                )
-            )
-
-
-# Transaction to looking for a user on db to authenticate
-def validate_user_exists(user_name):
-    r"""
-    Looking for a user by name on the database to valid authentication.
-
-    :param user_name: The user name to valid authentication on the API.
-    :return result: Boolean to valid if the user name exists to authenticate the API.
-    """
-
-    cfg = get_config_constant_file()
-
-    conn = session_to_db()
-
-    cursor = create_cursor(conn)
-
-    table_name = cfg['DB_AUTH_OBJECT']['USERS_AUTH']
-
-    sql_check = "SELECT EXISTS(SELECT 1 FROM {} WHERE username = {} LIMIT 1)".format(table_name, "'" + user_name + "'")
-
-    cursor.execute(sql_check)
-
-    result = cursor.fetchone()
-
-    close_cursor(cursor)
-    disconnect_from_db(conn)
-
-    return result
-
-
-# Transaction to update user' password  hashed on db to authenticate
-def update_user_password_hashed(user_name, password_hash):
-    r"""
-    Transaction to update password hashed of a user to authenticate on the API correctly.
-
-    :param user_name: The user name to update password hashed.
-    :param password_hash: The password hashed to authenticate on the API.
-    """
-
-    cfg = get_config_constant_file()
-
-    conn = session_to_db()
-
-    cursor = create_cursor(conn)
-
-    last_update_date = get_datenow_from_db()
-
-    table_name = cfg['DB_AUTH_OBJECT']['USERS_AUTH']
-
-    # update row to database
-    sql_update_user = "UPDATE {} SET password_hash = %s, last_update_date = %s WHERE username = %s".format(
-        table_name
-    )
-
-    cursor.execute(sql_update_user, (password_hash, last_update_date, user_name,))
-
-    conn.commit()
-
-    close_cursor(cursor)
-    disconnect_from_db(conn)
-
-
-def insert_user_authenticated(user_id, user_name, user_password, password_hash):
-    r"""
-    Transaction to add a user data to authenticate to API, inserted on the db.
-
-    :param user_id: The Id of the user to add on the db.
-    :param user_name: The user name of the user to add on the db.
-    :param user_password:  The password od the user to add on the db.
-    :param password_hash: The password hashed to authenticate on the API.
-    """
-
-    cfg = get_config_constant_file()
-
-    conn = session_to_db()
-
-    cursor = create_cursor(conn)
-
-    last_update_date = get_datenow_from_db()
-
-    table_name = cfg['DB_AUTH_OBJECT']['USERS_AUTH']
-
-    data = (user_id, user_name, user_password, password_hash,)
-
-    sql_user_insert = 'INSERT INTO {} (user_id, username, password, password_hash) ' \
-                      'VALUES (%s, %s, %s, %s)'.format(table_name)
-
-    cursor.execute(sql_user_insert, data)
-
-    conn.commit()
-
-    logger.info('Usuario insertado %s', "{0}, User_Name: {1}".format(user_id, user_name))
-
-    close_cursor(cursor)
-    disconnect_from_db(conn)
-
-'''
